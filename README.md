@@ -1,3 +1,3 @@
 # ansible-storage-test
 
-test to replace the terrfrom script of tf-state-storage repo
+test to replace the terraform script of tf-state-storage repo
