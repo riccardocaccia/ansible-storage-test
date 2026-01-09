@@ -1,0 +1,57 @@
+---
+- name: Replicazione Infrastruttura Terraform su OpenStack
+  hosts: localhost
+  connection: local
+  vars:
+    key_name: "key_test"
+    bastion_ip: "/32" # ip Bastion
+    controller_ip: "" # private ip ansible machine
+    image_name: "Rocky-9-GenericCloud.latest.x86_64.310525"
+
+  tasks:
+    # openstack_compute_keypair_v2
+    - name: Configurazione Keypair
+      openstack.cloud.keypair:
+        cloud: openstack_recas
+        name: "{{ key_name }}"
+        public_key: "{{ lookup('file', '~/.ssh/authorized_keys') }}"
+        state: present
+
+    # Security Group SSH
+    - name: Crea Security Group SSH Internal
+      openstack.cloud.security_group:
+        cloud: openstack_recas
+        name: "ssh-internal"
+        description: "[ansible] Allow SSH from Bastion"
+        state: present
+
+    - name: Regola SSH da Bastion
+      openstack.cloud.security_group_rule:
+        cloud: openstack_recas
+        security_group: "ssh-internal"
+        protocol: tcp
+        port_range_min: 22
+        port_range_max: 22
+        remote_ip_prefix: "{{ bastion_ip }}"
+        direction: ingress
+        state: present
+
+    # Istanza Compute
+    - name: Launch PostgreSQL VM
+      openstack.cloud.server:
+        cloud: openstack_recas
+        name: "postgresql-backend"
+        image: "{{ image_name }}"
+        flavor: "medium"  
+        key_name: "{{ key_name }}"
+        security_groups:
+          - default
+          - ssh-internal
+        network: "private_net"
+        userdata: "{{ lookup('template', 'cloudinit.sh.j2') }}"
+      register: psql_vm
+
+    # Output (output "psql_vm_private_ip")
+    - name: Mostra IP Privato
+      debug:
+        msg: "L'IP privato è {{ psql_vm.server.addresses.private_net[0].addr }}"

@@ -1,0 +1,9 @@
+clouds:
+  openstack_recas:
+    auth_type: "v3token"
+    auth:
+      auth_url: "https://keystone.recas.ba.infn.it/v3"
+      token: ""
+      project_id: ""
+    region_name: "RegionOne"
+    interface: "public"
