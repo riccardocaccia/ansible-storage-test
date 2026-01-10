@@ -1,22 +1,16 @@
 ---
-- name: Cleanup Infrastruttura (Ansible Destroy)
+- name: Cleanup - Ansible Destroy
   hosts: localhost
   connection: local
   tasks:
-    - name: Elimina Istanza PostgreSQL
+    - name: Destroy the instance created
       openstack.cloud.server:
         cloud: openstack_recas
-        name: "postgresql-backend"
+        name: "" # name or ID
         state: absent
 
-    - name: Elimina Regole e Security Group
+    - name: Eliminate the security group
       openstack.cloud.security_group:
         cloud: openstack_recas
-        name: "ssh-internal"
-        state: absent
-
-    - name: Elimina Keypair
-      openstack.cloud.keypair:
-        cloud: openstack_recas
-        name: "key_test"
+        name: ""
         state: absent
