@@ -9,14 +9,6 @@
     image_name: "Rocky-9-GenericCloud.latest.x86_64.310525"
 
   tasks:
-    # openstack_compute_keypair_v2
-    - name: Configurazione Keypair
-      openstack.cloud.keypair:
-        cloud: openstack_recas
-        name: "{{ key_name }}"
-        public_key: "{{ lookup('file', '~/.ssh/authorized_keys') }}"
-        state: present
-
     # Security Group SSH
     - name: Crea Security Group SSH Internal
       openstack.cloud.security_group:
@@ -24,17 +16,11 @@
         name: "ssh-internal"
         description: "[ansible] Allow SSH from Bastion"
         state: present
+        register: security_group
 
-    - name: Regola SSH da Bastion
-      openstack.cloud.security_group_rule:
-        cloud: openstack_recas
-        security_group: "ssh-internal"
-        protocol: tcp
-        port_range_min: 22
-        port_range_max: 22
-        remote_ip_prefix: "{{ bastion_ip }}"
-        direction: ingress
-        state: present
+    - name: Ispezione completa output del security group
+      ansible.builtin.debug:
+        var: security_group
 
     # Istanza Compute
     - name: Launch PostgreSQL VM
@@ -43,7 +29,7 @@
         name: "postgresql-backend"
         image: "{{ image_name }}"
         flavor: "medium"  
-        key_name: "{{ key_name }}"
+        key_name: ""
         security_groups:
           - default
           - ssh-internal
@@ -51,7 +37,11 @@
         userdata: "{{ lookup('template', 'cloudinit.sh.j2') }}"
       register: psql_vm
 
+    - name: Ispezione completa output della VM
+      ansible.builtin.debug:
+        var: psql_vm
+        
     # Output (output "psql_vm_private_ip")
-    - name: Mostra IP Privato
+    - name: shows private IP 
       debug:
-        msg: "L'IP privato è {{ psql_vm.server.addresses.private_net[0].addr }}"
+        msg: "The private IP is: {{ psql_vm.server.addresses.private_net[0].addr }}"
